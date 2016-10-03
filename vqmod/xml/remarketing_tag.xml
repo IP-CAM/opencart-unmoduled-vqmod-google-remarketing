@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+<id>Google Conversion and Remarketing code parameters can be editable in root config.php</id>
+<version>2.x</version>
+<vqmver>2.x</vqmver>
+<author>http://www.estrategai.lt (Linas Jusys)</author>
+
+<file name="config.php">
+    <operation>
+        <search position="before" offset="0">
+            <![CDATA[?>]]>
+        </search>
+        <add>
+            <![CDATA[
+				//Conversion code only for finished order route checkout/success
+				define('C_GOOGLE_CONVERSION_ID', '');
+				define('C_GOOGLE_CONVERSION_FORMAT', '');
+				define('C_GOOGLE_CONVERSION_COLOR', '');
+				define('C_GOOGLE_CONVERSION_LABEL', '');
+				define('C_GOOGLE_REMARKETING_ONLY', 'false');
+
+				//Remarketing code for all page
+				define('R_GOOGLE_CONVERSION_ID', '');
+				define('R_GOOGLE_CUSTOM_PARAMS', 'window.google_tag_params');
+				define('R_GOOGLE_REMARKETING_ONLY', 'true');
+				]]>
+        </add>
+    </operation>
+</file>
+
+<file name="catalog/model/checkout/order.php">
+    <operation>
+        <search position="after" offset="8">
+            <![CDATA[$template->data['products'][] = array(]]>
+        </search>
+        <add>
+            <![CDATA[
+				$this->session->data['google_conversion_value'] = $this->currency->format($product['total']+($this->config->get('config_tax') ? ($product['tax'] * $product['quantity']) : 0), $order_info['currency_code'], $order_info['currency_value'],false);
+				$this->session->data['google_conversion_currency'] = $this->currency->getCode();
+				]]>
+        </add>
+    </operation>
+</file>
+<file name="catalog/view/theme/*/template/product/product.tpl">
+    <operation>
+    <search position="before" offset="0" regex="true">
+        <![CDATA[<div class="container">]]>
+    </search>
+        <add>
+            <![CDATA[
+            <?php
+                    if (R_GOOGLE_CONVERSION_ID != ""){
+                    ?>
+                        <script type="text/javascript">
+                            var google_tag_params = {
+                                dynx_itemid: '<?php echo $product_id ?>',
+                                dynx_itemid2: '<?php echo $product_id ?>',
+                                dynx_pagetype: 'offerdetail',
+                                dynx_totalvalue: '<?php echo $price ?>',
+                            };
+                        </script>
+            <?php } ?>
+            ]]>
+        </add>
+    </operation>
+</file>
+<file name="catalog/view/theme/*/template/common/footer.tpl">
+    <operation>
+        <search position="before" offset="0">
+            <![CDATA[</body>]]>
+        </search>
+        <add>
+            <![CDATA[
+
+				<?php
+				if (R_GOOGLE_CONVERSION_ID != ""){
+				?>
+					<script type="text/javascript">
+					/* <![CDATA[ */
+					var google_conversion_id = <?php echo R_GOOGLE_CONVERSION_ID; ?>;
+					var google_custom_params = <?php echo R_GOOGLE_CUSTOM_PARAMS; ?>;
+					var google_remarketing_only = <?php echo R_GOOGLE_REMARKETING_ONLY; ?>;
+					/* ]]]]><![CDATA[> */
+					</script>
+					<script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">
+					</script>
+					<noscript>
+					<div style="display:inline;">
+					<img height="1" width="1" style="border-style:none;" alt="" src="//googleads.g.doubleclick.net/pagead/viewthroughconversion/<?php echo R_GOOGLE_CONVERSION_ID; ?>/?value=0&amp;guid=ON&amp;script=0"/>
+					</div>
+					</noscript>
+				<?php
+				}?>
+
+				<?php
+				if (isset($_GET['route'])){
+				if (C_GOOGLE_CONVERSION_ID != ""  AND $_GET['route'] == "checkout/success"){
+				?>
+					<script type="text/javascript">
+					/* <![CDATA[ */
+					var google_conversion_id = <?php echo C_GOOGLE_CONVERSION_ID; ?>;
+					var google_conversion_language = "<?php echo $this->language->get('code'); ?>";
+					var google_conversion_format = "<?php echo C_GOOGLE_CONVERSION_FORMAT; ?>";
+					var google_conversion_color = "<?php echo C_GOOGLE_CONVERSION_COLOR; ?>";
+					var google_conversion_label = "<?php echo C_GOOGLE_CONVERSION_LABEL; ?>";
+					var google_conversion_value = '<?php echo $this->session->data['google_conversion_value']; ?>';
+					var google_conversion_currency = "<?php echo $this->session->data['google_conversion_currency']; ?>";
+					var google_remarketing_only = <?php echo C_GOOGLE_REMARKETING_ONLY;?>;
+					/* ]]]]><![CDATA[> */
+					</script>
+
+					<script type="text/javascript"
+					src="//www.googleadservices.com/pagead/
+					conversion.js">
+					</script>
+
+					<noscript>
+					<img height=1 width=1 border=0 style="border-style:none;" alt=""  src="//www.googleadservices.com/pagead/conversion/<?php echo C_GOOGLE_CONVERSION_ID; ?>/
+					?value=<?php echo $this->session->data['google_conversion_value']; ?>&amp;currency_code=<?php echo $this->session->data['google_conversion_currency']; ?>&amp;label=<?php echo C_GOOGLE_CONVERSION_LABEL; ?>&amp;
+					guid=ON&amp;script=0">
+					</noscript>
+				<?php }} ?>
+
+				]]>
+        </add>
+    </operation>
+</file>
+
+</modification>
